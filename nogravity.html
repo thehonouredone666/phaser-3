@@ -59,6 +59,9 @@ function update() {
   if (cursors.down.isDown || this.sKey.isDown) {
     player.setVelocityY(200);
   }
+   if (cursors.right.isDown || this.dKey.isDown) {
+    player.setVelocityX(200);
+  }
 }
 </script>
 </body>
