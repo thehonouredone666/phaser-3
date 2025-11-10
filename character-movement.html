@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser – Realistic Character Movement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  backgroundColor: '#87CEEB',
+  physics: {
+    default: 'arcade',
+    arcade: { gravity: { y: 1000 }, debug: false }
+  },
+  scene: { preload, create, update }
+};
+
+new Phaser.Game(config);
+
+let player, platforms, cursors, keys, scoreText;
+
+// --- Tunables for “realistic” feel ---
+const MOVE_ACCEL = 1400;     // how fast we accelerate left/right
+const MAX_SPEED   = 260;     // cap horizontal speed
+const GROUND_DRAG = 1800;    // friction on ground
+const AIR_DRAG    = 100;     // very small drag in air
+const JUMP_VEL    = -460;    // jump impulse
+const COYOTE_MS   = 110;     // grace period after leaving ledge
+const BUFFER_MS   = 120;     // jump buffer before landing
+const JUMP_CUT    = 0.45;    // how strongly we cut a jump on early release
+
+// Runtime state
+let lastOnGroundTime = 0;
+let lastJumpPressTime = -9999;
+let facing = 'right';
+
+function preload() {
+  this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
+  // Classic tutorial sheet: 9 frames, 32x48
+  this.load.spritesheet('dude',
+    'https://labs.phaser.io/assets/sprites/dude.png',
+    { frameWidth: 32, frameHeight: 48 }
+  );
+}
+
+function create() {
+  // World
+  platforms = this.physics.add.staticGroup();
+  platforms.create(400, 584, 'ground').setScale(2).refreshBody(); // ground
+  platforms.create(600, 420, 'ground').setScale(0.7).refreshBody();
+  platforms.create(200, 320, 'ground').setScale(0.7).refreshBody();
+  platforms.create(500, 220, 'ground').setScale(0.6).refreshBody();
+
+  // Player
+  player = this.physics.add.sprite(120, 450, 'dude');
+  player.setCollideWorldBounds(true);
+  player.setBounce(0.0);
+  player.setMaxVelocity(MAX_SPEED, 800);
+  player.body.setSize(20, 40).setOffset(6, 8); // tighter hitbox
+
+  this.physics.add.collider(player, platforms);
+
+  // Animations (matches Phaser tutorial sheet)
+  this.anims.create({ key: 'left',  frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }), frameRate: 12, repeat: -1 });
+  this.anims.create({ key: 'turn',  frames: [ { key: 'dude', frame: 4 } ], frameRate: 20 });
+  this.anims.create({ key: 'right', frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }), frameRate: 12, repeat: -1 });
+  // For jump/fall we’ll reuse single frames to signal state
+  this.anims.create({ key: 'jump', frames: [ { key: 'dude', frame: 5 } ], frameRate: 20 });
+  this.anims.create({ key: 'fall', frames: [ { key: 'dude', frame: 0 } ], frameRate: 20 });
+
+  // Input
+  cursors = this.input.keyboard.createCursorKeys();
+  keys = this.input.keyboard.addKeys({
+    A: Phaser.Input.Keyboard.KeyCodes.A,
+    D: Phaser.Input.Keyboard.KeyCodes.D,
+    W: Phaser.Input.Keyboard.KeyCodes.W,
+    SPACE: Phaser.Input.Keyboard.KeyCodes.SPACE
+  });
+
+  // Simple HUD
+  this.add.text(16, 16,
+    'A/← and D/→ to move • W/↑/Space to jump\nCoyote time + jump buffer + variable jump',
+    { fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '16px', color: '#003a2b' }
+  ).setScrollFactor(0);
+}
+
+function update(time, delta) {
+  const onGround = player.body.blocked.down || player.body.touching.down;
+
+  // Track ground contact time (for coyote)
+  if (onGround) lastOnGroundTime = time;
+
+  // Horizontal input
+  const left  = cursors.left.isDown  || keys.A.isDown;
+  const right = cursors.right.isDown || keys.D.isDown;
+
+  // Apply horizontal acceleration
+  if (left && !right) {
+    player.setAccelerationX(-MOVE_ACCEL);
+    facing = 'left';
+  } else if (right && !left) {
+    player.setAccelerationX(MOVE_ACCEL);
+    facing = 'right';
+  } else {
+    player.setAccelerationX(0);
+  }
+
+  // Ground vs air drag (friction)
+  player.setDragX(onGround ? GROUND_DRAG : AIR_DRAG);
+
+  // Capture jump input (buffered)
+  const jumpPressed = Phaser.Input.Keyboard.JustDown(cursors.up) ||
+                      Phaser.Input.Keyboard.JustDown(keys.W) ||
+                      Phaser.Input.Keyboard.JustDown(keys.SPACE);
+  if (jumpPressed) lastJumpPressTime = time;
+
+  // Can we jump? (coyote + buffer)
+  const canCoyote = (time - lastOnGroundTime) <= COYOTE_MS;
+  const wantsJump = (time - lastJumpPressTime) <= BUFFER_MS;
+
+  if (wantsJump && canCoyote) {
+    player.setVelocityY(JUMP_VEL);
+    lastJumpPressTime = -9999; // consume buffer
+  }
+
+  // Variable jump height: if player releases jump early while going up, cut velocity
+  const jumpHeld = cursors.up.isDown || keys.W.isDown || keys.SPACE.isDown;
+  if (!jumpHeld && player.body.velocity.y < 0) {
+    player.setVelocityY(player.body.velocity.y * JUMP_CUT);
+  }
+
+  // --- Animation state machine ---
+  if (!onGround) {
+    // Air states
+    if (player.body.velocity.y < 0) {
+      player.anims.play('jump', true);
+    } else {
+      player.anims.play('fall', true);
+    }
+  } else {
+    // Ground states
+    if (Math.abs(player.body.velocity.x) > 20) {
+      // choose left/right run based on facing
+      player.anims.play(facing === 'left' ? 'left' : 'right', true);
+    } else {
+      player.anims.play('turn', true);
+    }
+  }
+}
+</script>
+</body>
+</html>

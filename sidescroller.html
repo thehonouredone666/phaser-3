@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser Side-Scroller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const VIEW_W = 800, VIEW_H = 600;
+const WORLD_W = 2400, WORLD_H = 600;
+
+const config = {
+  type: Phaser.AUTO,
+  width: VIEW_W,
+  height: VIEW_H,
+  backgroundColor: '#87CEEB',
+  physics: {
+    default: 'arcade',
+    arcade: { gravity: { y: 900 }, debug: false }
+  },
+  scene: { preload, create, update }
+};
+
+new Phaser.Game(config);
+
+let player, platforms, stars, cursors, keys, score = 0, scoreText;
+let bg; // parallax tilesprite
+
+function preload () {
+  this.load.image('sky', 'https://labs.phaser.io/assets/skies/sky4.png');
+  this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
+  this.load.image('star', 'https://labs.phaser.io/assets/demoscene/star.png');
+  this.load.image('player', 'https://labs.phaser.io/assets/sprites/pangball.png');
+}
+
+function create () {
+  // World bounds & camera
+  this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
+  this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H);
+
+  // Parallax sky using a tilesprite that fills the viewport and scrolls with camera
+  bg = this.add.tileSprite(0, 0, VIEW_W, VIEW_H, 'sky')
+        .setOrigin(0, 0)
+        .setScrollFactor(0); // fixed to camera
+
+  // Platforms
+  platforms = this.physics.add.staticGroup();
+
+  // Ground spans the world as repeated segments
+  for (let x = 200; x < WORLD_W; x += 400) {
+    platforms.create(x, 580, 'ground').setScale(2).refreshBody();
+  }
+
+  // Floating ledges
+  const ledges = [
+    {x: 500,  y: 460}, {x: 750,  y: 370},
+    {x: 1100, y: 420}, {x: 1350, y: 300},
+    {x: 1650, y: 380}, {x: 1950, y: 330}, {x: 2200, y: 450}
+  ];
+  ledges.forEach(p => platforms.create(p.x, p.y, 'ground').setScale(0.6).refreshBody());
+
+  // Player
+  player = this.physics.add.sprite(100, 450, 'player');
+  player.setBounce(0.1);
+  player.setCollideWorldBounds(true);
+  player.body.setCircle(player.width/2); // nicer collisions for the ball
+
+  // Collisions
+  this.physics.add.collider(player, platforms);
+
+  // Stars to collect
+  stars = this.physics.add.group({
+    key: 'star',
+    repeat: 18,
+    setXY: { x: 300, y: 0, stepX: 110 }
+  });
+  stars.children.iterate(s => {
+    s.setBounceY(Phaser.Math.FloatBetween(0.3, 0.6));
+  });
+  this.physics.add.collider(stars, platforms);
+  this.physics.add.overlap(player, stars, collectStar, null, this);
+
+  // Controls
+  cursors = this.input.keyboard.createCursorKeys();
+  keys = this.input.keyboard.addKeys({
+    A: Phaser.Input.Keyboard.KeyCodes.A,
+    D: Phaser.Input.Keyboard.KeyCodes.D,
+    W: Phaser.Input.Keyboard.KeyCodes.W
+  });
+
+  // Camera follow
+  this.cameras.main.startFollow(player, true, 0.08, 0.08);
+
+  // HUD (fixed to camera)
+  scoreText = this.add.text(16, 16, 'Score: 0', {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '22px',
+    color: '#003a2b'
+  }).setScrollFactor(0);
+
+  this.add.text(16, 46, '←/→ or A/D to move | ↑ or W to jump', {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '16px',
+    color: '#003a2b'
+  }).setScrollFactor(0);
+}
+
+function update () {
+  // Parallax background: move tiles based on camera scroll
+  bg.tilePositionX = this.cameras.main.scrollX * 0.4;
+
+  const speed = 260;
+  player.setVelocityX(0);
+
+  if (cursors.left.isDown || keys.A.isDown)  player.setVelocityX(-speed);
+  if (cursors.right.isDown || keys.D.isDown) player.setVelocityX(speed);
+
+  if ((cursors.up.isDown || keys.W.isDown) && player.body.touching.down) {
+    player.setVelocityY(-520);
+  }
+}
+
+function collectStar (player, star) {
+  star.disableBody(true, true);
+  score += 10;
+  scoreText.setText('Score: ' + score);
+
+  // Respawn stars when all collected
+  if (stars.countActive(true) === 0) {
+    stars.children.iterate(s => {
+      s.enableBody(true, s.x + Phaser.Math.Between(-80, 80), 0, true, true);
+      s.setBounceY(Phaser.Math.FloatBetween(0.3, 0.6));
+    });
+  }
+}
+</script>
+</body>
+</html>

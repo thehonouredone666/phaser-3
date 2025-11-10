@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser Jump with Gravity</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  backgroundColor: '#87CEEB',
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 500 }, // Gravity pulls sprite down
+      debug: false
+    }
+  },
+  scene: { preload, create, update }
+};
+
+const game = new Phaser.Game(config);
+let player, cursors, wKey;
+let ground;
+
+function preload() {
+  this.load.image('player', 'https://labs.phaser.io/assets/sprites/pangball.png');
+  this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
+}
+
+function create() {
+  // Add ground
+  ground = this.physics.add.staticGroup();
+  ground.create(400, 580, 'ground').setScale(2).refreshBody();
+
+  // Add player sprite with physics
+  player = this.physics.add.sprite(400, 450, 'player');
+  player.setCollideWorldBounds(true);
+  player.setBounce(0.2); // small bounce when landing
+
+  // Collide with ground
+  this.physics.add.collider(player, ground);
+
+  // Controls
+  cursors = this.input.keyboard.createCursorKeys();
+  wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+}
+
+function update() {
+  // Jump if on ground and up key pressed
+  if ((cursors.up.isDown || wKey.isDown) && player.body.touching.down) {
+    player.setVelocityY(-350); // jump up
+  }
+}
+</script>
+</body>
+</html>

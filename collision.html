@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser Collision Demo (No Gravity)</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  backgroundColor: '#87CEEB',
+  physics: {
+    default: 'arcade',
+    arcade: { gravity: { y: 0 }, debug: false }
+  },
+  scene: { preload, create, update }
+};
+
+const game = new Phaser.Game(config);
+let player, target, cursors, wKey, sKey, collidedText;
+
+function preload() {
+  this.load.image('player', 'https://labs.phaser.io/assets/sprites/pangball.png');
+  this.load.image('target', 'https://labs.phaser.io/assets/sprites/red_ball.png');
+}
+
+function create() {
+  // Add player and target sprites
+  player = this.physics.add.sprite(200, 300, 'player');
+  target = this.physics.add.staticSprite(600, 300, 'target');
+
+  // Enable world bounds
+  player.setCollideWorldBounds(true);
+
+  // Keyboard input
+  cursors = this.input.keyboard.createCursorKeys();
+  wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+  sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    aKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+  dKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+
+  // Add overlap detection
+  this.physics.add.overlap(player, target, hitTarget, null, this);
+
+  // Text feedback
+  collidedText = this.add.text(260, 80, '', {
+    font: '24px Arial',
+    fill: '#003a2b'
+  });
+}
+
+function update() {
+  player.setVelocity(0);
+
+  // Move up/down only
+  if (cursors.up.isDown || wKey.isDown) player.setVelocityY(-200);
+  if (cursors.down.isDown || sKey.isDown) player.setVelocityY(200);
+
+    if (cursors.left.isDown || aKey.isDown) player.setVelocityX(-200);
+  if (cursors.right.isDown || dKey.isDown) player.setVelocityX(200);
+}
+
+function hitTarget(player, target) {
+  target.setTint(0xff0000);
+  collidedText.setText('🎯 Collision detected!');
+  // Remove tint after short delay
+  player.scene.time.delayedCall(500, () => target.clearTint());
+}
+</script>
+</body>
+</html>

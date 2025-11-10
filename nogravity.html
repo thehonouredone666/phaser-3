@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser Sprite Move Up & Down</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  backgroundColor: '#87CEEB',
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 0 },
+      debug: false
+    }
+  },
+  scene: { preload, create, update }
+};
+
+const game = new Phaser.Game(config);
+let player;
+let cursors;
+
+function preload() {
+  // You can replace this image with your own sprite
+  this.load.image('player', 'https://labs.phaser.io/assets/sprites/pangball.png');
+}
+
+function create() {
+  // Add sprite and enable physics
+  player = this.physics.add.sprite(400, 300, 'player');
+  player.setCollideWorldBounds(true);
+
+  // Add keyboard controls
+  cursors = this.input.keyboard.createCursorKeys();
+  this.wKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
+  this.sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+}
+
+function update() {
+  // Reset velocity
+  player.setVelocity(0);
+
+  // Move up
+  if (cursors.up.isDown || this.wKey.isDown) {
+    player.setVelocityY(-200);
+  }
+
+  // Move down
+  if (cursors.down.isDown || this.sKey.isDown) {
+    player.setVelocityY(200);
+  }
+}
+</script>
+</body>
+</html>

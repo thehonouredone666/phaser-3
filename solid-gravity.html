@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser Solid Collision with Gravity</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  backgroundColor: '#87CEEB',
+  physics: {
+    default: 'arcade',
+    arcade: { gravity: { y: 700 }, debug: false }
+  },
+  scene: { preload, create, update }
+};
+
+const game = new Phaser.Game(config);
+
+let player, platforms, cursors, keys;
+
+function preload() {
+  this.load.image('player', 'https://labs.phaser.io/assets/sprites/pangball.png');
+  this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
+}
+
+function create() {
+  // --- Static platforms (solid) ---
+  platforms = this.physics.add.staticGroup();
+
+  // Ground
+  platforms.create(400, 584, 'ground').setScale(2).refreshBody();
+
+  // Ledges
+  platforms.create(200, 420, 'ground').setScale(0.7, 0.7).refreshBody();
+  platforms.create(600, 320, 'ground').setScale(0.6, 0.7).refreshBody();
+
+  // Solid vertical wall (shape with static physics body)
+  const wall = this.add.rectangle(400, 480, 30, 220, 0x114433, 0.7);
+  this.physics.add.existing(wall, true); // static immovable
+
+  // --- Player (dynamic) ---
+  player = this.physics.add.sprite(140, 100, 'player');
+  player.setBounce(0.1);
+  player.setCollideWorldBounds(true);
+
+  // Colliders (solid)
+  this.physics.add.collider(player, platforms);
+  this.physics.add.collider(player, wall);
+
+  // Controls
+  cursors = this.input.keyboard.createCursorKeys();
+  keys = this.input.keyboard.addKeys({
+    W: Phaser.Input.Keyboard.KeyCodes.W,
+    A: Phaser.Input.Keyboard.KeyCodes.A,
+    D: Phaser.Input.Keyboard.KeyCodes.D
+  });
+
+  // HUD
+  this.add.text(16, 16,
+    '←/→ or A/D to move | ↑ or W to jump\nSolid platforms + wall; gravity enabled.',
+    { fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '18px', color: '#003a2b' }
+  );
+}
+
+function update() {
+  // Horizontal movement (optional but useful to test solid collisions)
+  const speed = 220;
+  player.setVelocityX(0);
+
+  if (cursors.left.isDown || keys.A.isDown)  player.setVelocityX(-speed);
+  if (cursors.right.isDown || keys.D.isDown) player.setVelocityX(speed);
+
+  // Jump only if standing on something
+  if ((cursors.up.isDown || keys.W.isDown) && player.body.touching.down) {
+    player.setVelocityY(-420);
+  }
+}
+</script>
+</body>
+</html>
