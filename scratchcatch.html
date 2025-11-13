@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Catch the Apple – Debug</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{margin:0;padding:0;background:#f6fff5}
+    #err{position:fixed;left:12px;bottom:12px;right:12px;max-height:45vh;overflow:auto;
+         font:13px/1.35 monospace;background:#fff0f0;border:1px solid #e07a7a;padding:8px;color:#5b0000;display:none}
+  </style>
+  <!-- Use a pinned, widely-used Phaser version to avoid CDN quirks -->
+  <script src="https://unpkg.com/phaser@3.60.0/dist/phaser.min.js"></script>
+  <script>
+    // Global error catchers (fires even if Phaser never boots)
+    window.addEventListener('error', e => showErr('Error: '+e.message+'\n'+(e.filename||'')+':'+(e.lineno||'') ), true);
+    window.addEventListener('unhandledrejection', e => showErr('Promise rejection: '+(e.reason && e.reason.message || e.reason)), true);
+    function showErr(msg){
+      const box = document.getElementById('err');
+      box.style.display='block';
+      box.textContent += (box.textContent ? '\n' : '') + msg;
+      console.log('[debug]', msg);
+    }
+    // Verify Phaser loaded
+    if (!window.Phaser) { showErr('Phaser failed to load. Check network/CSP.'); }
+  </script>
+</head>
+<body>
+<div id="err"></div>
+<script>
+(function(){
+  if (!window.Phaser) return;
+
+  const config = {
+    type: Phaser.AUTO,
+    width: 800,
+    height: 520,
+    backgroundColor: '#f6fff5',
+    physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
+    scene: { preload, create, update }
+  };
+  new Phaser.Game(config);
+
+  let basket, cursors, apples, score=0, scoreText, missText;
+
+  function preload(){
+    // Draw textures inline (no external assets)
+    const g1 = this.add.graphics();
+    g1.fillStyle(0xe63946, 1).fillCircle(16, 16, 14);
+    g1.generateTexture('apple', 32, 32); g1.destroy();
+
+    const g2 = this.add.graphics();
+    g2.fillStyle(0x8d5524, 1).fillRoundedRect(0,0, 90,28,8);
+    g2.generateTexture('basket', 90, 28); g2.destroy();
+  }
+
+  function create(){
+    const W = this.scale.width, H = this.scale.height;
+
+    basket = this.physics.add.image(W/2, H-40, 'basket').setImmovable(true).setCollideWorldBounds(true);
+    cursors = this.input.keyboard.createCursorKeys();
+
+    apples = this.physics.add.group();
+
+    scoreText = this.add.text(16,16,'Score: 0',{fontFamily:'Arial',fontSize:'20px',color:'#003a2b'});
+    missText  = this.add.text(16,44,'Misses: 0',{fontFamily:'Arial',fontSize:'18px',color:'#b23b3b'});
+    this.add.text(W-16,16,'←/→ move',{fontFamily:'Arial',fontSize:'16px',color:'#3a6559'}).setOrigin(1,0);
+
+    this.physics.add.overlap(basket, apples, (_b, a)=>{
+      score++; scoreText.setText('Score: '+score); a.destroy();
+    });
+
+    // Simple spawner
+    this.time.addEvent({
+      delay: 900, loop: true,
+      callback: ()=>{
+        const x = Phaser.Math.Between(20, W-20);
+        const a = apples.create(x, -20, 'apple');
+        a.setVelocityY(170);
+      }
+    });
+
+    // sanity ping
+    console.log('[debug] scene created OK');
+    document.getElementById('err').style.display='none';
+  }
+
+  function update(){
+    const speed = 360;
+    basket.setVelocityX(0);
+    if (cursors.left.isDown)  basket.setVelocityX(-speed);
+    if (cursors.right.isDown) basket.setVelocityX(speed);
+
+    const H = this.scale.height;
+    apples.getChildren().forEach(a=>{
+      if (a.active && a.y > H+40) { a.destroy(); const m = Number(missText.text.split(': ')[1])+1; missText.setText('Misses: '+m); }
+    });
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Phaser – Mouse Follow + Click-to-Place Items on Shelf</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  backgroundColor: '#f6fff5',
+  physics: { default: 'arcade', arcade: { debug: false } },
+  scene: { preload, create, update }
+};
+
+new Phaser.Game(config);
+
+let follower, shelf, infoText;
+let items = [];      // { label, x, y, w, h }
+let itemNodes = [];  // rendered containers
+
+function preload() {
+  this.load.image('cursor', 'https://labs.phaser.io/assets/sprites/pangball.png');
+  this.load.image('shelf', 'https://labs.phaser.io/assets/sprites/platform.png');
+}
+
+function create() {
+  // Shelf (clickable)
+  shelf = this.add.sprite(400, 520, 'shelf').setScale(1.8, 0.6);
+  shelf.setInteractive({ useHandCursor: true });
+
+  // Follower sprite (tracks mouse)
+  follower = this.physics.add.sprite(100, 120, 'cursor');
+  follower.setCollideWorldBounds(true);
+
+  // UI text
+  infoText = this.add.text(16, 16, 'Move mouse to guide the ball. Click the shelf to place an item at that spot.', {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '18px',
+    color: '#003a2b'
+  });
+
+  // Smooth follow toward pointer
+  this.input.on('pointermove', (pointer) => {
+    this.physics.moveToObject(follower, pointer, 320);
+    if (Phaser.Math.Distance.Between(follower.x, follower.y, pointer.x, pointer.y) < 4) {
+      follower.body.setVelocity(0);
+    }
+  });
+
+  // Click shelf → prompt for item → place tag centered at click X, stacked up if needed
+  shelf.on('pointerdown', (pointer) => {
+    const name = prompt('🧺 Enter item name to add to shelf:');
+    if (!name) return;
+    const label = name.trim();
+    if (!label) return;
+
+    // Measure tag size using a temporary text object
+    const temp = this.add.text(-1000, -1000, label, {
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      fontSize: '16px',
+      color: '#003a2b'
+    });
+    const padX = 8, padY = 6;
+    const w = temp.width + padX * 2;
+    const h = temp.height + padY * 2;
+    temp.destroy();
+
+    // Shelf bounds and clamped X
+    const bounds = shelf.getBounds();
+    const left = bounds.left + 16;
+    const right = bounds.right - 16;
+    const topY = bounds.top - 8;
+    let x = Phaser.Math.Clamp(pointer.x - w/2, left, right - w); // left of pill
+    let y = topY;
+
+    // Avoid overlap: if it intersects an existing pill, bump upwards by rowGap until free
+    const rowGap = Math.max(h + 6, 28);
+    const maxRows = 6; // safety
+    let attempts = 0;
+    while (intersectsExisting(x, y, w, h) && attempts < maxRows) {
+      y -= rowGap;
+      attempts++;
+    }
+
+    items.push({ label, x, y, w, h });
+    infoText.setText(`✅ Added: ${label}`);
+    renderItems(this);
+  });
+
+  // Right-click shelf to clear all
+  shelf.on('pointerup', (pointer) => {
+    if (pointer.rightButtonDown()) {
+      items = [];
+      infoText.setText('🧹 Shelf cleared.');
+      renderItems(this);
+    }
+  });
+  this.input.mouse.disableContextMenu();
+
+  renderItems(this);
+}
+
+function update() {
+  // (Optional) extra movement logic for follower
+}
+
+/** Check if a proposed rect (x,y,w,h) intersects any existing item rects */
+function intersectsExisting(x, y, w, h) {
+  for (const it of items) {
+    if (rectsOverlap(x, y, w, h, it.x, it.y, it.w, it.h)) return true;
+  }
+  return false;
+}
+function rectsOverlap(x1, y1, w1, h1, x2, y2, w2, h2) {
+  return !(x1 + w1 <= x2 || x2 + w2 <= x1 || y1 + h1 <= y2 || y2 + h2 <= y1);
+}
+
+/** Render items at their saved positions; each is a pill container you can click to remove */
+function renderItems(scene) {
+  // Clear old nodes
+  itemNodes.forEach(n => n.destroy());
+  itemNodes = [];
+
+  const padX = 8, padY = 6;
+  for (const it of items) {
+    // Background pill
+    const g = scene.add.graphics();
+    g.fillStyle(0xfff9c4, 1);    // pale yellow
+    g.lineStyle(2, 0xe6d971, 1); // border
+    g.fillRoundedRect(0, 0, it.w, it.h, 10);
+    g.strokeRoundedRect(0, 0, it.w, it.h, 10);
+
+    // Text
+    const text = scene.add.text(padX, padY, it.label, {
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      fontSize: '16px',
+      color: '#003a2b'
+    });
+
+    // Container at exact stored coordinates
+    const c = scene.add.container(it.x, it.y, [g, text]);
+    c.setSize(it.w, it.h);
+    c.setInteractive(new Phaser.Geom.Rectangle(0, 0, it.w, it.h), Phaser.Geom.Rectangle.Contains);
+
+    // Click pill to remove it
+    c.on('pointerdown', () => {
+      const idx = items.indexOf(it);
+      if (idx !== -1) items.splice(idx, 1);
+      infoText.setText(`🗑️ Removed: ${it.label}`);
+      renderItems(scene);
+    });
+
+    itemNodes.push(c);
+  }
+}
+</script>
+</body>
+</html>

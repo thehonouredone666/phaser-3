@@ -1,174 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Phaser Demo Index</title>
+  <title>🎮 RHSC Computing – Phaser Demos</title>
   <style>
+    :root {
+      --green: #006e51;
+      --green2: #009a70;
+      --bg: #f6fff5;
+      --card: #fffef4;
+      --line: #e6d971;
+      --text: #003a2b;
+    }
     body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f6fff5;
-      color: #003a2b;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       text-align: center;
-      padding: 60px 20px;
+      padding: 56px 20px;
     }
-    h1 {
-      color: #006e51;
-      margin-bottom: 0.5em;
+    h1 { color: var(--green); margin-bottom: 0.4em; }
+    footer { margin-top: 30px; font-size: 0.9rem; color: #777; }
+
+    .section-toggle {
+      display: inline-flex; align-items: center; gap: .6rem;
+      border: 2px solid var(--line); border-radius: 12px;
+      padding: .4rem .8rem; background: #fff;
+      color: var(--green); font-weight: 600; cursor: pointer;
+      user-select: none; font-size: 1.05rem;
     }
-    .guide-link {
-      font-size: 1.1em;
-      margin-bottom: 1.5em;
+    .section-toggle:hover { background: #fffcd5; }
+    .chev { transition: transform .2s ease; }
+    .section[aria-expanded="true"] .chev { transform: rotate(90deg); }
+
+    .section-body {
+      max-width: 980px; margin: 10px auto;
+      overflow: hidden; transition: max-height .25s ease, opacity .2s ease;
     }
-    .guide-link a {
-      color: #006e51;
-      text-decoration: underline;
-      font-weight: bold;
-    }
+    .section[aria-expanded="false"] .section-body { max-height: 0; opacity: 0; }
+    .section[aria-expanded="true"]  .section-body { max-height: 1000px; opacity: 1; }
+
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.2em;
-      max-width: 900px;
-      margin: 0 auto;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.1em;
+      margin: 10px auto 0;
     }
     .card {
-      background: #fffef4;
-      border: 2px solid #e6d971;
+      background: var(--card);
+      border: 2px solid var(--line);
       border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-      text-align: left;
+      padding: 18px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     }
-    h2 {
-      color: #006e51;
-      font-size: 1.2em;
-      text-align: center;
-    }
-    a.button {
+    .card h3 { color: var(--green); font-size: 1.05rem; margin-bottom: 8px; }
+    .button {
       display: inline-block;
-      text-decoration: none;
-      background: #006e51;
+      background: var(--green);
       color: white;
-      padding: 10px 20px;
+      text-decoration: none;
+      padding: 9px 16px;
       border-radius: 10px;
-      margin-top: 10px;
-      transition: background 0.2s ease;
+      transition: background 0.15s;
     }
-    a.button:hover { background: #009a70; }
-    ul {
-      margin-top: 8px;
-      padding-left: 18px;
-      font-size: 0.95em;
-    }
-    ul li { margin-bottom: 4px; }
-    footer {
-      margin-top: 3em;
-      font-size: 0.9em;
-      color: #666;
-    }
+    .button:hover { background: var(--green2); }
   </style>
 </head>
 <body>
-  <h1>🎮 Phaser Demo Collection</h1>
-  <p class="guide-link">
-    🧭 New to Phaser? Visit the official learning portal: 
-    <a href="https://phaser.io/learn" target="_blank">https://phaser.io/learn</a>
-  </p>
+  <h1>🎮 RHSC Computing – Phaser Demos</h1>
+  <p>Explore a range of interactive examples built with Phaser 3.</p>
 
-  <div class="grid">
-    <div class="card">
-      <h2>No Gravity – Up/Down Keys</h2>
-      <p>Move the sprite up and down using ↑ ↓ or W / S.</p>
-      <ul>
-        <li>🧠 Add left/right movement keys.</li>
-        <li>🎨 Change the sprite to something new (e.g., a rocket).</li>
-        <li>⚙️ Add a speed variable and experiment with faster/slower motion.</li>
-      </ul>
-      <a class="button" href="nogravity.html">Open No-Gravity Demo</a>
+  <!-- MOVEMENT & PHYSICS -->
+  <section class="section" aria-expanded="true">
+    <button class="section-toggle"><span class="chev">▶</span> 🏃 Movement & Physics</button>
+    <div class="section-body">
+      <div class="grid">
+        <div class="card"><h3>No Gravity</h3><a href="nogravity.html" class="button">Open</a></div>
+        <div class="card"><h3>Gravity</h3><a href="gravity.html" class="button">Open</a></div>
+        <div class="card"><h3>Solid Collision (No Gravity)</h3><a href="solid-collision.html" class="button">Open</a></div>
+        <div class="card"><h3>Solid Collision + Gravity</h3><a href="solid-gravity.html" class="button">Open</a></div>
+        <div class="card"><h3>Side-Scroller</h3><a href="sidescroller.html" class="button">Open</a></div>
+        <div class="card"><h3>Character Movement</h3><a href="character-movement.html" class="button">Open</a></div>
+        <div class="card"><h3>Door Hinge (Matter)</h3><a href="door-hinge.html" class="button">Open</a></div>
+        <div class="card"><h3>Bounce Balls</h3><a href="bounceballs.html" class="button">Open</a></div>
+      </div>
     </div>
+  </section>
 
-    <div class="card">
-      <h2>Gravity – Jump Only</h2>
-      <p>Press ↑, W, or Space to jump. Sprite falls naturally.</p>
-      <ul>
-        <li>🪂 Make the sprite double-jump before landing.</li>
-        <li>🎯 Add a floating target to jump into.</li>
-        <li>💬 Display “Jump!” text each time you press the key.</li>
-      </ul>
-      <a class="button" href="gravity.html">Open Gravity Demo</a>
+  <!-- INTERACTION -->
+  <section class="section" aria-expanded="true">
+    <button class="section-toggle"><span class="chev">▶</span> 🧱 Interaction & Collision</button>
+    <div class="section-body">
+      <div class="grid">
+        <div class="card"><h3>Collision</h3><a href="collision.html" class="button">Open</a></div>
+        <div class="card"><h3>Collision + Score</h3><a href="collision-score.html" class="button">Open</a></div>
+        <div class="card"><h3>Planet Break (Matter)</h3><a href="planet-break.html" class="button">Open</a></div>
+        <div class="card"><h3>Teleport</h3><a href="teleport.html" class="button">Open</a></div>
+        <div class="card"><h3>Scratch-Catch</h3><a href="scratchcatch.html" class="button">Open</a></div>
+      </div>
     </div>
+  </section>
 
-    <div class="card">
-      <h2>Collision (Overlap Detection)</h2>
-      <p>Move to trigger a collision event with a target.</p>
-      <ul>
-        <li>💥 Add sound when a collision happens.</li>
-        <li>🎨 Make the target move randomly every few seconds.</li>
-        <li>🔄 Keep a collision counter at the top of the screen.</li>
-      </ul>
-      <a class="button" href="collision.html">Open Collision Demo</a>
+  <!-- MENUS & SYSTEMS -->
+  <section class="section" aria-expanded="true">
+    <button class="section-toggle"><span class="chev">▶</span> 🧩 Menus & Systems</button>
+    <div class="section-body">
+      <div class="grid">
+        <div class="card"><h3>Main + Stock (Overlay)</h3><a href="main-with-stock-overlay.html" class="button">Open</a></div>
+        <div class="card"><h3>Main + Stock (Inline)</h3><a href="main-inline-stock.html" class="button">Open</a></div>
+      </div>
     </div>
+  </section>
 
-    <div class="card">
-      <h2>Collision + Score</h2>
-      <p>Each time you hit the target, your score increases.</p>
-      <ul>
-        <li>⏱️ Add a 30-second timer to race for points.</li>
-        <li>💫 Make the target shrink or grow each time it’s hit.</li>
-        <li>📊 Save and display a “high score” between plays.</li>
-      </ul>
-      <a class="button" href="collision-score.html">Open Collision + Score Demo</a>
+  <!-- CREATIVE / EXPERIMENTS -->
+  <section class="section" aria-expanded="true">
+    <button class="section-toggle"><span class="chev">▶</span> 🪄 Creative & Experiments</button>
+    <div class="section-body">
+      <div class="grid">
+        <div class="card"><h3>Mouse Follow</h3><a href="mouse-follow-shelf.html" class="button">Open</a></div>
+        <div class="card"><h3>Mouse Follow – List</h3><a href="mouse-follow-shelf-list.html" class="button">Open</a></div>
+        <div class="card"><h3>Mouse Follow – Placed</h3><a href="mouse-follow-shelf-placed.html" class="button">Open</a></div>
+        <div class="card"><h3>Pac-Man Template</h3><a href="pacman.html" class="button">Open</a></div>
+         <div class="card"><h3>Maze Random</h3><a href="maze-14x14-red.html" class="button">Open</a></div>
+      </div>
     </div>
+  </section>
 
-    <div class="card">
-      <h2>Solid Collision (No Gravity)</h2>
-      <p>Try moving into the green walls – solid barriers stop the sprite.</p>
-      <ul>
-        <li>🚧 Add more walls to create a maze layout.</li>
-        <li>🔑 Place a target that must be reached without touching walls.</li>
-        <li>🎨 Change wall colour when the player collides.</li>
-      </ul>
-      <a class="button" href="solid-collision.html">Open Solid No-Gravity Demo</a>
-    </div>
+  <footer>© 2025 RHSC Computing – Phaser Examples</footer>
 
-    <div class="card">
-      <h2>Solid Collision + Gravity</h2>
-      <p>Jump and move left/right. Platforms and walls are solid.</p>
-      <ul>
-        <li>🌈 Add extra floating platforms or obstacles.</li>
-        <li>🎯 Place a coin or star to collect on the top platform.</li>
-        <li>🪜 Add a moving platform or elevator.</li>
-      </ul>
-      <a class="button" href="solid-gravity.html">Open Solid + Gravity Demo</a>
-    </div>
-
-    <div class="card">
-      <h2>Side-Scroller</h2>
-      <p>Run, jump, and collect stars across a scrolling world.</p>
-      <ul>
-        <li>🚀 Increase world width and add new platform layouts.</li>
-        <li>🧍 Add an enemy that moves back and forth.</li>
-        <li>⭐ Make stars worth different points (gold, silver, bronze).</li>
-      </ul>
-      <a class="button" href="sidescroller.html">Open Side-Scroller Demo</a>
-    </div>
-
-    <div class="card">
-      <h2>Realistic Character Movement</h2>
-      <p>Acceleration, drag, coyote time, jump buffering and animations.</p>
-      <ul>
-        <li>🧍‍♂️ Add a collectible item that gives a speed boost.</li>
-        <li>🎵 Play a jump sound when leaving the ground.</li>
-        <li>💡 Create a simple “goal” platform that ends the level.</li>
-      </ul>
-      <a class="button" href="character-movement.html">Open Character Movement Demo</a>
-    </div>
-  </div>
-
-  <footer>
-    © 2025 RHSC Computing – Phaser Examples<br/>
-    📘 Learn more at <a href="https://phaser.io/learn" target="_blank">https://phaser.io/learn</a>
-  </footer>
+  <script>
+    document.querySelectorAll('.section-toggle').forEach(btn=>{
+      const section=btn.closest('.section');
+      btn.addEventListener('click',()=>{
+        const open=section.getAttribute('aria-expanded')==='true';
+        section.setAttribute('aria-expanded',String(!open));
+        btn.querySelector('.chev').style.transform=open?'rotate(0deg)':'rotate(90deg)';
+      });
+    });
+  </script>
 </body>
 </html>

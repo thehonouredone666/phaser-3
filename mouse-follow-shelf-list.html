@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Phaser – Mouse Follow + Shelf Items</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  backgroundColor: '#f6fff5',
+  physics: { default: 'arcade', arcade: { debug: false } },
+  scene: { preload, create, update }
+};
+
+new Phaser.Game(config);
+
+let follower, shelf, infoText;
+let items = [];
+let itemNodes = []; // containers for rendered item tags
+
+function preload() {
+  this.load.image('cursor', 'https://labs.phaser.io/assets/sprites/pangball.png');
+  this.load.image('shelf', 'https://labs.phaser.io/assets/sprites/platform.png');
+}
+
+function create() {
+  // Shelf (clickable)
+  shelf = this.add.sprite(400, 520, 'shelf').setScale(1.8, 0.6);
+  shelf.setInteractive({ useHandCursor: true });
+
+  // Follower sprite (tracks mouse)
+  follower = this.physics.add.sprite(100, 120, 'cursor');
+  follower.setCollideWorldBounds(true);
+
+  // UI text
+  infoText = this.add.text(16, 16, 'Move mouse to guide the ball. Click the shelf to add an item.', {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '18px',
+    color: '#003a2b'
+  });
+
+  // Smooth follow toward pointer
+  this.input.on('pointermove', (pointer) => {
+    this.physics.moveToObject(follower, pointer, 320);
+    if (Phaser.Math.Distance.Between(follower.x, follower.y, pointer.x, pointer.y) < 4) {
+      follower.body.setVelocity(0);
+    }
+  });
+
+  // Click shelf → prompt for item → render tags on shelf
+  shelf.on('pointerdown', () => {
+    const name = prompt('🧺 Enter item name to add to shelf:');
+    if (!name) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    items.push(trimmed);
+    infoText.setText(`✅ Added: ${trimmed}`);
+    renderItems(this);
+  });
+
+  // (Optional) Right-click shelf to clear all
+  shelf.on('pointerup', (pointer) => {
+    if (pointer.rightButtonDown()) {
+      items = [];
+      infoText.setText('🧹 Shelf cleared.');
+      renderItems(this);
+    }
+  });
+
+  // Enable right-click on canvas
+  this.input.mouse.disableContextMenu();
+
+  // First render (empty)
+  renderItems(this);
+}
+
+function update() {
+  // You could add easing/drag here if you want, but not needed for now.
+}
+
+/** Render the items as pill tags on top of the shelf, wrapping as needed */
+function renderItems(scene) {
+  // Clear old nodes
+  itemNodes.forEach(node => node.destroy());
+  itemNodes = [];
+
+  const bounds = shelf.getBounds();
+  const left   = bounds.left + 16;
+  const right  = bounds.right - 16;
+  const topY   = bounds.top - 8;   // start slightly above the shelf
+  const rowGap = 32;
+  const padX   = 8;  // pill internal padding
+  const padY   = 6;
+  const gap    = 8;  // space between pills
+
+  let x = left;
+  let y = topY;
+
+  items.forEach((label) => {
+    // Measure text width by creating a temporary Text first
+    const text = scene.add.text(0, 0, label, {
+      fontFamily: 'Arial, Helvetica, sans-serif',
+      fontSize: '16px',
+      color: '#003a2b'
+    });
+
+    const w = text.width + padX * 2;
+    const h = text.height + padY * 2;
+
+    // Wrap to next row if it would overflow
+    if (x + w > right) {
+      x = left;
+      y -= rowGap; // stack upwards above the shelf
+    }
+
+    // Background pill using Graphics inside a Container
+    const g = scene.add.graphics();
+    g.fillStyle(0xfff9c4, 1);         // pale yellow
+    g.lineStyle(2, 0xe6d971, 1);      // border
+    g.fillRoundedRect(0, 0, w, h, 10);
+    g.strokeRoundedRect(0, 0, w, h, 10);
+
+    // Center text inside the pill
+    text.setPosition(padX, padY);
+
+    const c = scene.add.container(x, y, [g, text]);
+    c.setSize(w, h);
+    itemNodes.push(c);
+
+    // Next pill position
+    x += w + gap;
+
+    // Optional: click a pill to remove it
+    c.setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains);
+    c.on('pointerdown', () => {
+      // Remove the item by label (first match)
+      const idx = items.indexOf(label);
+      if (idx !== -1) items.splice(idx, 1);
+      infoText.setText(`🗑️ Removed: ${label}`);
+      renderItems(scene);
+    });
+  });
+}
+</script>
+</body>
+</html>

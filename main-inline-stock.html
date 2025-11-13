@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser – Main with Inline Stock Panel (Fixed)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head>
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 900,
+  height: 560,
+  backgroundColor: '#f6fff5',
+  scene: { preload, create }
+};
+new Phaser.Game(config);
+
+function preload() {}
+
+function create() {
+  const scene = this;
+  const W = this.scale.width;
+  const H = this.scale.height;
+
+  // Title
+  this.add.text(W/2, 60, '🐾 Pet Store – Main', {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '28px',
+    color: '#006e51'
+  }).setOrigin(0.5);
+
+  // Buttons row
+  const btnY = 110;
+  makeButton(this, W/2 - 200, btnY, 120, 40, 'Stock', () => { console.log('Stock clicked'); showStock(scene); });
+  makeButton(this, W/2,       btnY, 120, 40, 'Shop',  () => { console.log('Shop clicked');  showShop(scene);  });
+  makeButton(this, W/2 + 200, btnY, 120, 40, 'Save',  () => { console.log('Save clicked');  showSave(scene);  });
+
+  // Content container (we draw the active view here)
+  scene.content = scene.add.container(0, 0);
+
+  // Background card for the content area
+  const card = this.add.rectangle(W/2, H/2 + 30, 720, 360, 0xffffff, 1)
+     .setStrokeStyle(2, 0xe6d971)
+     .setDepth(0); // keep low depth so buttons are always clickable
+
+  this.add.text(W/2, H/2 - 145, 'Content', {
+    fontFamily:'Arial, Helvetica, sans-serif', fontSize:'16px', color:'#3a6559'
+  }).setOrigin(0.5).setDepth(0);
+
+  // Helper: clear current content
+  function clearContent() {
+    scene.content.removeAll(true); // destroy children
+  }
+
+  // ---- Views ----
+  function showStock(scene) {
+    clearContent();
+
+    const panelX = W/2 - 340;
+    const panelY = H/2 - 120;
+
+    // Header
+    scene.content.add(scene.add.text(panelX, panelY, '📦 Stock', headStyle()));
+
+    // Columns
+    const colDog   = panelX;
+    const colStock = panelX + 320;
+    const colPrice = panelX + 500;
+    const headY    = panelY + 36;
+
+    scene.content.add(scene.add.text(colDog,   headY, 'Dog type',      colHead()));
+    scene.content.add(scene.add.text(colStock, headY, 'Current stock', colHead()));
+    scene.content.add(scene.add.text(colPrice, headY, 'Price',         colHead()));
+
+    scene.content.add(scene.add.rectangle(W/2, headY + 18, 680, 2, 0xe6d971));
+
+    // Rows
+    const dogs = pickDogs(5);
+    let y = headY + 30;
+    dogs.forEach(d => {
+      const stock = Phaser.Math.Between(0, 25);
+      const price = (Phaser.Math.Between(150, 600) / 10).toFixed(2); // £15.0–£60.0
+      scene.content.add(scene.add.text(colDog,   y, d,               rowStyle()));
+      scene.content.add(scene.add.text(colStock, y, String(stock),   rowStyle()));
+      scene.content.add(scene.add.text(colPrice, y, `£${price}`,     rowStyle()));
+      y += 32;
+    });
+
+    // Refresh button (new random values)
+    makeMiniButton(scene, panelX, y + 16, 120, 32, 'Refresh', () => showStock(scene));
+  }
+
+  function showShop(scene) {
+    clearContent();
+    scene.content.add(scene.add.text(W/2, H/2 + 10, '🛒 Shop coming soon…', {
+      fontFamily:'Arial, Helvetica, sans-serif', fontSize:'22px', color:'#003a2b'
+    }).setOrigin(0.5));
+  }
+
+  function showSave(scene) {
+    clearContent();
+    scene.content.add(scene.add.text(W/2, H/2 + 10, '💾 Game saved (stub)', {
+      fontFamily:'Arial, Helvetica, sans-serif', fontSize:'22px', color:'#003a2b'
+    }).setOrigin(0.5));
+  }
+}
+
+/* ---------- UI helpers ---------- */
+function makeButton(scene, x, y, w, h, label, onClick) {
+  const g = scene.add.graphics({ x: x - w/2, y: y - h/2 }).setDepth(9);
+  drawButton(g, w, h, false);
+
+  const text = scene.add.text(x, y, label, {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '18px',
+    color: '#ffffff'
+  }).setOrigin(0.5).setDepth(9);
+
+  // High-depth interactive zone so it's always on top
+  const hit = scene.add.zone(x, y, w, h)
+    .setDepth(10)
+    .setInteractive({ useHandCursor: true });
+  hit.on('pointerover', () => drawButton(g, w, h, true));
+  hit.on('pointerout',  () => drawButton(g, w, h, false));
+  hit.on('pointerdown', () => onClick && onClick());
+
+  return { g, text, hit };
+}
+function makeMiniButton(scene, x, y, w, h, label, onClick) {
+  const g = scene.add.graphics({ x: x, y: y });
+  drawMiniButton(g, w, h, false);
+  const t = scene.add.text(x + w/2, y + h/2, label, {
+    fontFamily:'Arial, Helvetica, sans-serif', fontSize:'16px', color:'#ffffff'
+  }).setOrigin(0.5);
+  const hit = scene.add.zone(x + w/2, y + h/2, w, h).setInteractive({ useHandCursor: true });
+  hit.on('pointerover', () => drawMiniButton(g, w, h, true));
+  hit.on('pointerout',  () => drawMiniButton(g, w, h, false));
+  hit.on('pointerdown', () => onClick && onClick());
+  scene.content.add(g); scene.content.add(t); scene.content.add(hit);
+}
+function drawButton(g, w, h, hover) {
+  g.clear();
+  g.fillStyle(hover ? 0x009a70 : 0x006e51, 1);
+  g.fillRoundedRect(0, 0, w, h, 10);
+  g.lineStyle(2, 0xe6d971, 1);
+  g.strokeRoundedRect(0, 0, w, h, 10);
+}
+function drawMiniButton(g, w, h, hover) {
+  g.clear();
+  g.fillStyle(hover ? 0x339f7f : 0x2a8f72, 1);
+  g.fillRoundedRect(0, 0, w, h, 8);
+  g.lineStyle(2, 0xe6d971, 1);
+  g.strokeRoundedRect(0, 0, w, h, 8);
+}
+
+/* ---------- Styles & data ---------- */
+function headStyle(){
+  return { fontFamily:'Arial, Helvetica, sans-serif', fontSize:'22px', color:'#006e51' };
+}
+function colHead(){
+  return { fontFamily:'Arial, Helvetica, sans-serif', fontSize:'18px', color:'#003a2b', fontStyle:'bold' };
+}
+function rowStyle(){
+  return { fontFamily:'Arial, Helvetica, sans-serif', fontSize:'17px', color:'#003a2b' };
+}
+function pickDogs(n){
+  const all = ['Cocker Spaniel','Labrador','German Shepherd','French Bulldog','Poodle',
+               'Beagle','Dachshund','Border Collie','Boxer','Shih Tzu'];
+  Phaser.Utils.Array.Shuffle(all);
+  return all.slice(0, n);
+}
+</script>
+</body>
+</html>

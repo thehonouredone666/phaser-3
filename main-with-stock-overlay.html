@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Phaser – Main Menu with Stock Overlay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+</head> 
+<body>
+<script>
+const config = {
+  type: Phaser.AUTO,
+  width: 900,
+  height: 560,
+  backgroundColor: '#f6fff5',
+  scene: { preload, create }
+};
+new Phaser.Game(config);
+
+function preload() {}
+
+function create() {
+  const scene = this;
+  const W = this.scale.width;
+  const H = this.scale.height;
+
+  // Title
+  this.add.text(W/2, 70, '🐾 Pet Store – Main', {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '28px',
+    color: '#006e51'
+  }).setOrigin(0.5);
+
+  // Top buttons container
+  const btnY = 130;
+  makeButton(this, W/2 - 200, btnY, 120, 40, 'Stock', () => openStockOverlay(scene));
+  makeButton(this, W/2,       btnY, 120, 40, 'Shop',  () => toast(scene, 'Shop (coming soon)'));
+  makeButton(this, W/2 + 200, btnY, 120, 40, 'Save',  () => toast(scene, 'Game saved (stub)'));
+
+  // Little hint
+  this.add.text(W/2, H - 30, 'Click “Stock” to view current inventory', {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '16px',
+    color: '#003a2b'
+  }).setOrigin(0.5);
+}
+
+/* ============ UI Helpers ============ */
+
+function makeButton(scene, x, y, w, h, label, onClick) {
+  const g = scene.add.graphics({ x: x - w/2, y: y - h/2 });
+  drawButton(g, w, h, false);
+  const text = scene.add.text(x, y, label, {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '18px',
+    color: '#ffffff'
+  }).setOrigin(0.5);
+
+  const hit = scene.add.zone(x, y, w, h).setInteractive({ useHandCursor: true });
+  hit.on('pointerover', () => drawButton(g, w, h, true));
+  hit.on('pointerout',  () => drawButton(g, w, h, false));
+  hit.on('pointerdown', () => onClick && onClick());
+
+  // return parts if needed
+  return { g, text, hit };
+}
+
+function drawButton(g, w, h, hover) {
+  g.clear();
+  const fill = hover ? 0x009a70 : 0x006e51;
+  g.fillStyle(fill, 1);
+  g.fillRoundedRect(0, 0, w, h, 10);
+  g.lineStyle(2, 0xe6d971, 1);
+  g.strokeRoundedRect(0, 0, w, h, 10);
+}
+
+function toast(scene, message) {
+  const t = scene.add.text(scene.scale.width/2, 200, message, {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '18px',
+    color: '#003a2b',
+    backgroundColor: '#fffef4',
+    padding: { left: 10, right: 10, top: 6, bottom: 6 }
+  }).setOrigin(0.5).setAlpha(0);
+
+  scene.tweens.add({
+    targets: t, alpha: 1, duration: 150, yoyo: false,
+    onComplete: () => {
+      scene.tweens.add({
+        targets: t, alpha: 0, delay: 850, duration: 350,
+        onComplete: () => t.destroy()
+      });
+    }
+  });
+}
+
+/* ============ Stock Overlay ============ */
+function openStockOverlay(scene) {
+  const W = scene.scale.width, H = scene.scale.height;
+  const panelW = 640, panelH = 360;
+
+  const overlay = scene.add.container(0, 0).setDepth(10); // <- one depth for all
+
+  const dim = scene.add.rectangle(W/2, H/2, W, H, 0x000000, 0.45).setInteractive();
+  const panel = scene.add.rectangle(W/2, H/2, panelW, panelH, 0xffffff, 1).setStrokeStyle(2, 0xe6d971);
+  const title = scene.add.text(W/2 - panelW/2 + 16, H/2 - panelH/2 + 12, '📦 Stock', {
+    fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '22px', color: '#006e51'
+  });
+
+  const closeBtn = scene.add.text(W/2 + panelW/2 - 24, H/2 - panelH/2 + 10, '✕', {
+    fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '20px', color: '#003a2b'
+  }).setInteractive({ useHandCursor: true }).on('pointerdown', () => overlay.destroy());
+
+  const leftX = W/2 - panelW/2 + 24;
+  const colDog = leftX, colStock = leftX + 310, colPrice = leftX + 470;
+  const headY = H/2 - panelH/2 + 56;
+
+  const hDog   = scene.add.text(colDog,   headY, 'Dog type',      headStyle());
+  const hStock = scene.add.text(colStock, headY, 'Current stock', headStyle());
+  const hPrice = scene.add.text(colPrice, headY, 'Price',         headStyle());
+  const divider= scene.add.rectangle(W/2, headY + 18, panelW - 32, 2, 0xe6d971);
+
+  const rows = [];
+  let y = headY + 32;
+  pickDogs(5).forEach(d => {
+    const stock = Phaser.Math.Between(0, 25);
+    const price = (Phaser.Math.Between(150, 600) / 10).toFixed(2);
+    rows.push(
+      scene.add.text(colDog,   y, d,               rowStyle()),
+      scene.add.text(colStock, y, String(stock),   rowStyle()),
+      scene.add.text(colPrice, y, `£${price}`,     rowStyle())
+    );
+    y += 32;
+  });
+
+  overlay.add([dim, panel, title, closeBtn, hDog, hStock, hPrice, divider, ...rows]);
+}
+
+
+/* ---- Styles & data helpers ---- */
+function headStyle() {
+  return {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '18px',
+    color: '#003a2b',
+    fontStyle: 'bold'
+  };
+}
+function rowStyle() {
+  return {
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontSize: '17px',
+    color: '#003a2b'
+  };
+}
+function pickDogs(n) {
+  const all = [
+    'Cocker Spaniel', 'Labrador', 'German Shepherd', 'French Bulldog', 'Poodle',
+    'Beagle', 'Dachshund', 'Border Collie', 'Boxer', 'Shih Tzu'
+  ];
+  Phaser.Utils.Array.Shuffle(all);
+  return all.slice(0, n);
+}
+</script>
+</body>
+</html>
