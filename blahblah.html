@@ -9,6 +9,7 @@
 </head>
 <body>
 <script>
+  
 const config = {
   type: Phaser.AUTO,
   width: 960,
@@ -154,9 +155,9 @@ function update() {
   // --- Player movement ---
   if (canMove) {
     const speed = 220;
-    if (cursors.left.isDown || aKey.isDown)      player.setVelocityX(-speed);
-    else if (cursors.right.isDown || dKey.isDown)player.setVelocityX(speed);
-    else                                         player.setVelocityX(0);
+    if (cursors.left.isDown || aKey.isDown)       player.setVelocityX(-speed);
+    else if (cursors.right.isDown || dKey.isDown) player.setVelocityX(speed);
+    else                                          player.setVelocityX(0);
 
     // Double jump
     if (Phaser.Input.Keyboard.JustDown(jumpKey)) {
