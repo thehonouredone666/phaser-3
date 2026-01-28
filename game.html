@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rush of Fate - Game</title>
+  
+  <!-- Phaser Library -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+  
+  <style>
+    html, body {
+      margin: 0;
+      background: #0b0f14;
+    }
+    canvas {
+      display: block;
+    }
+    
+    /* ESC Pause Menu Styles */
+    #escapescreen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0,0,0,0.55);
+      align-items: center;
+      justify-content: center;
+    }
+    #escapescreen .panel {
+      background: #0f1822;
+      border: 2px solid #3aa1ff;
+      border-radius: 8px;
+      padding: 20px 30px;
+      color: #fff;
+      text-align: center;
+    }
+    #escapescreen button {
+      margin: 6px;
+      padding: 8px 18px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #3aa1ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    #escapescreen button:hover {
+      background: #2a91ef;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ESC Pause Overlay -->
+  <div id="escapescreen">
+    <div class="panel">
+      <h2>Game Paused</h2>
+      <button id="resumeButton">Resume</button>
+      <button id="escSettingsButton">Settings</button>
+      <button id="mainMenuButton">Main Menu</button>
+    </div>
+  </div>
+
+  <!-- Load game files IN ORDER -->
+  <script src="js/utils/ui.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/scenes/MainScene.js"></script>
+  <script src="js/scenes/Scene2.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
